@@ -1,8 +1,5 @@
 const app = require('express')();
-const path = require('path');
-
 const bluetooth = require("node-bluetooth");
-
 const device = new bluetooth.DeviceINQ();
 
 function HSVtoRGB(h, s, v) {
@@ -47,11 +44,13 @@ function toHex(n) {
     }
     return hex;
 }
+
 function startParty(connections) {
     interval = setInterval(() => {
         switch (mode) {
             case 0:
-
+            // both bulbs have the same color    
+            
             if (rotate) h += 0.01;
             if (h >= 1) h -= 1;
     
@@ -62,19 +61,21 @@ function startParty(connections) {
             break;
 
             case 1:
-
+            // triadic harmony colors
+                
             if (rotate) h += 0.01;
             if (h >= 1) h -= 1;
     
             var rgb1 = HSVtoRGB(h, 1, value);
-            var rgb2 = HSVtoRGB((h + 0.66) % 1, 1, value);
+            var rgb2 = HSVtoRGB((h + 0.33) % 1, 1, value);
 
             baseColor1 = rgb1;
             baseColor2 = rgb2;
             break;
 
             case 2:
-
+            // complementary colors
+                
             if (rotate) h += 0.01;
             if (h >= 1) h -= 1;
     
@@ -86,6 +87,7 @@ function startParty(connections) {
             break;
 
             case 3:
+            // analog colors
 
             if (rotate) h += 0.01;
             if (h >= 1) h -= 1;
@@ -98,12 +100,14 @@ function startParty(connections) {
             break;
 
             case 4:
+            // both white
 
             baseColor1 = { r: 255, g: 255, b: 255 };
             baseColor2 = { r: 255, g: 255, b: 255 };
             break;
 
             case 5:
+                // both purple
 
             baseColor1 = { r: 153, g: 0, b: 102 };
             baseColor2 = { r: 153, g: 0, b: 102 };
@@ -115,6 +119,7 @@ function startParty(connections) {
         var g1 = toHex(Math.floor(baseColor1.g * value));
         var b1 = toHex(Math.floor(baseColor1.b * value));
     
+        // note colors are in green/blue/red format
         colors[0] = `01fe000053831000${g1}${b1}${r1}0050000000`;
 
         var r2 = toHex(Math.floor(baseColor2.r * value));
@@ -145,9 +150,11 @@ require('async')
                 
                 if (err) return callback(err);
                 
+                // ¯\_(ツ)_/¯ hello in chinese bulb language
                 connection.write(Buffer.from('3031323334353637', 'hex'), (err, bytesWritten) => {
                     if (err) return callback(err);
 
+                    // start with white
                     connection.write(Buffer.from('01fe0000510210000000008000000080', 'hex'), (err, bytesWritten) => {
                         if (err) return callback(err);
 
@@ -160,6 +167,8 @@ require('async')
     (err, results) => {
         if (err) throw err;
 
+        // just every tenth of a second update the color
+        // this has been working perfectly for weeks at home, so I'll stay with this method
         setInterval(() => {
             require('async').each(results, (connection) => {
                 connection[0].write(Buffer.from(colors[connection[1]], 'hex'), (err) => {
